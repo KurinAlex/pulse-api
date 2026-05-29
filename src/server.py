@@ -3,13 +3,31 @@ from collections import Counter
 from typing import Annotated
 
 import requests
-from fastapi import Depends, FastAPI, Path, Query, Response
+from fastapi import Depends, FastAPI, HTTPException, Path, Query, Response, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ytmusicapi import YTMusic
 
 from models import HistoryItem, Song
 from util import bytes_to_jpeg
 
-app = FastAPI()
+security = HTTPBearer()
+
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Dependency function to validate the incoming API token.
+    """
+    token = credentials.credentials
+    if token != os.getenv("API_TOKEN"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return token
+
+
+app = FastAPI(dependencies=[Depends(verify_token)])
 
 
 def ytmusic_client() -> YTMusic:
