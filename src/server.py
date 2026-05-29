@@ -3,13 +3,31 @@ from collections import Counter
 from typing import Annotated
 
 import requests
-from fastapi import Depends, FastAPI, Path, Query, Response
+from fastapi import Depends, FastAPI, HTTPException, Path, Query, Response, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ytmusicapi import YTMusic
 
 from models import HistoryItem, Song
 from util import bytes_to_jpeg
 
-app = FastAPI()
+security = HTTPBearer()
+
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Dependency function to validate the incoming API token.
+    """
+    token = credentials.credentials
+    if token != os.getenv("API_TOKEN"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return token
+
+
+app = FastAPI(dependencies=[Depends(verify_token)])
 
 
 def ytmusic_client() -> YTMusic:
@@ -31,7 +49,9 @@ YTMusicDep = Annotated[YTMusic, Depends(ytmusic_client)]
 def get_last_played(client: YTMusicDep):
     history_data = client.get_history()
     if not history_data:
-        return {"error": "No history found"}
+        return Response(
+            status_code=status.HTTP_404_NOT_FOUND, content="History not found"
+        )
 
     song = HistoryItem.model_validate(history_data[0])
 
@@ -58,7 +78,7 @@ def get_played_today(
 
     if top is not None:
         top_artists = artists_counter.most_common(top)
-        other_artists = (artists_counter - Counter(dict(top_artists)))
+        other_artists = artists_counter - Counter(dict(top_artists))
         other = sum(other_artists.values())
 
         artists_counter = Counter(dict(top_artists))
@@ -79,12 +99,16 @@ def get_thumbnail(
     song = Song.model_validate(song_data)
     thumbnails = song.videoDetails.thumbnail.thumbnails
     if not thumbnails:
-        return Response(status_code=404, content="Thumbnail not found")
+        return Response(
+            status_code=status.HTTP_404_NOT_FOUND, content="Thumbnail not found"
+        )
 
     url = max(thumbnails, key=lambda t: t.width).url
     response = requests.get(url)
-    if response.status_code != 200:
-        return Response(status_code=502, content="Failed to fetch thumbnail")
+    if response.status_code != status.HTTP_200_OK:
+        return Response(
+            status_code=status.HTTP_502_BAD_GATEWAY, content="Failed to fetch thumbnail"
+        )
 
     image_data = bytes_to_jpeg(response.content, width, height)
     return Response(
