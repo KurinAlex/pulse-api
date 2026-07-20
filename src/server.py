@@ -54,14 +54,8 @@ def get_last_played(client: YTMusicDep):
         )
 
     song = HistoryItem.model_validate(history_data[0])
-
-    data = {
-        "title": song.title,
-        "artist": song.artists_str,
-        "duration": song.duration,
-        "videoId": song.videoId,
-    }
-    return data
+    response = f"{song.title}\n{song.artists_str}\n{song.duration}\n{song.videoId}"
+    return response
 
 
 @app.get("/played-today")
@@ -85,7 +79,8 @@ def get_played_today(
         if other > 0:
             artists_counter["Other"] = other
 
-    return {"total_count": len(today_songs), "artists_count": artists_counter}
+    artists_string = "\n".join(f"{a}\n{c}" for a, c in artists_counter.items())
+    return f"{len(today_songs)}\n{artists_string}"
 
 
 @app.get("/thumbnail/{video_id}")
