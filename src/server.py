@@ -4,6 +4,7 @@ from typing import Annotated
 
 import requests
 from fastapi import Depends, FastAPI, HTTPException, Path, Query, Response, status
+from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ytmusicapi import YTMusic
 
@@ -45,7 +46,7 @@ def ytmusic_client() -> YTMusic:
 YTMusicDep = Annotated[YTMusic, Depends(ytmusic_client)]
 
 
-@app.get("/last-played")
+@app.get("/last-played", response_class=PlainTextResponse)
 def get_last_played(client: YTMusicDep):
     history_data = client.get_history()
     if not history_data:
@@ -58,7 +59,7 @@ def get_last_played(client: YTMusicDep):
     return response
 
 
-@app.get("/played-today")
+@app.get("/played-today", response_class=PlainTextResponse)
 def get_played_today(
     client: YTMusicDep, top: Annotated[int | None, Query(ge=0)] = None
 ):
