@@ -221,3 +221,6 @@ __marimo__/
 
 # YTMusic auth file
 browser.json
+
+# Image files
+tmp/

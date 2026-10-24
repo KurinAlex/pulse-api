@@ -1,6 +1,17 @@
 from io import BytesIO
+from pathlib import Path
+from typing import IO
 
 from PIL import Image
+
+
+def save_to_jpeg(image_data: IO, filename: str | Path) -> None:
+    input_image = Image.open(image_data)
+
+    if input_image.mode in ("RGBA", "P"):
+        input_image = input_image.convert("RGB")
+
+    input_image.save(filename, format="JPEG")
 
 
 def bytes_to_jpeg(image_data: bytes, width: int | None, height: int | None) -> bytes:
