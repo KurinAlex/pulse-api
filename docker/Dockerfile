@@ -6,6 +6,6 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev --frozen
 COPY . .
 
-EXPOSE 8000
+EXPOSE 8080
 
-CMD ["uv", "run", "src/main.py"]
+CMD ["uv", "run", "main.py"]
