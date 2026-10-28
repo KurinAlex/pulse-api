@@ -145,7 +145,7 @@ def get_picture(
     )
 
 
-@app.post("/picture")
+@app.post("/picture", response_class=PlainTextResponse)
 async def upload_picture(file: UploadFile):
     if file.content_type not in [
         "image/jpeg",
@@ -164,3 +164,28 @@ async def upload_picture(file: UploadFile):
     return Response(
         status_code=status.HTTP_201_CREATED, content="Image uploaded successfully"
     )
+
+
+@app.get("/health", response_class=PlainTextResponse)
+def health_check():
+    return "ok"
+
+
+sleep_mode = False
+
+
+@app.get("/sleep", response_class=PlainTextResponse)
+def get_sleep():
+    return "1" if sleep_mode else "0"
+
+
+@app.post("/sleep_on")
+def post_sleep_on():
+    global sleep_mode
+    sleep_mode = True
+
+
+@app.post("/sleep_off")
+def post_sleep_off():
+    global sleep_mode
+    sleep_mode = False
